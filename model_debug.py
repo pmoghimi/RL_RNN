@@ -67,6 +67,7 @@ class Model:
         task.pol_out_history = []; task.val_out_history = []
         ############# Decision and reward array initiation##########
         task.action_array = []; task.reward = []; task.time_mask = []
+        task.prob = [];
         # Go over input at each point in time (this_u)
         t = 0   # Variable to keep track of time steps
         pol_x = self.policy_hidden_init; val_x = self.value_hidden_init;
@@ -89,7 +90,10 @@ class Model:
             Given the output of the policy network, which specifies probabilities, choose an action
             """
             # The multinomial will generate a number in [0, 2] range, 0=fixation, 1=match, 2=nonmatch
-            this_action = tf.multinomial(tf.transpose(pol_out), 1) #tf.multinomial(tf.log(tf.transpose(pol_out)), 1)  # Do NOT remove the log!, or will produce samples not from the given distribution!
+            #this_action = tf.multinomial(tf.transpose(pol_out), 1) #tf.multinomial(tf.log(tf.transpose(pol_out)), 1)  # Do NOT remove the log!, or will produce samples not from the given distribution!
+            prob = tf.log(tf.nn.softmax(pol_out, 0))
+            task.prob.append(tf.nn.softmax(pol_out, 0))
+            this_action = tf.multinomial(tf.transpose(prob), 1)
             action_array = tf.one_hot(tf.squeeze(this_action), 3)
             action_array = tf.squeeze(tf.cast(action_array, dtype=tf.float32))
             task.action_array.append(tf.transpose(action_array))
@@ -239,12 +243,23 @@ class Model:
         # Calculate loss for the value network (Equation 4)
         self.Loss_val = self.E
 
-        self.Loss = self.Loss_pol + self.Loss_val
+        self.Loss = self.Loss_pol + 0.05*self.Loss_val
         """
         Define optimizer, calculate gradients for both networks
         """
         opt = tf.train.AdamOptimizer(learning_rate = par['learning_rate'])
         self.train_op = opt.minimize(self.Loss)
+
+        """
+        Define optimizer, calculate and gradient the the value network
+        """
+        #val_opt = tf.train.AdamOptimizer(learning_rate = par['learning_rate']/100)
+        """
+        Define optimizer, calculate and gradient the the policy network
+        """
+        #pol_opt = tf.train.AdamOptimizer(learning_rate = par['learning_rate'])
+        #self.pol_train_op = pol_opt.minimize(self.Loss_pol, var_list = pol_list)
+        #self.val_train_op = val_opt.minimize(self.Loss_val, var_list = val_list)
 
 def main(task, gpu_id):
     # If a gpu id has been provided, use it
@@ -273,6 +288,7 @@ def main(task, gpu_id):
         init = tf.global_variables_initializer()
         sess.run(init)
         t_start = time.time()
+        reward_overtime = []
         for it in range(par['num_iterations']):
             # Create a batch of stimuli, stores in attribute stimulus for the task
             task.generate_trial()
@@ -280,15 +296,18 @@ def main(task, gpu_id):
             """
             Run the model
             """
-            _, loss, pol_out, reward, this_action_array, this_time_mask, baseline, advantage, logpi, pol_out_final = \
+            _, loss, pol_out, reward, this_action_array, this_time_mask, baseline, advantage, logpi, pol_out_final, prob = \
                 sess.run([M.train_op, M.Loss, task.pol_out_history, M.external_reward, task.action_array, \
-                task.time_mask, M.baseline, M.advantage, M.logpi, M.pol_out], \
+                task.time_mask, M.baseline, M.advantage, M.logpi, M.pol_out, task.prob], \
                 {stimulus: np.swapaxes(trial_info['neural_input'], 1, 0), target:np.swapaxes(trial_info['desired_output'], 1, 0)})
-            pol_out = np.array(pol_out);
+            pol_out = np.array(pol_out); prob = np.array(prob)
+            reward_overtime.append(reward.sum())
+
             if it%par['iters_between_outputs']==0:
                 #pdb.set_trace()
                 plt.subplot(2, 2, 1)
-                plt.plot(pol_out[:,:,0])
+                #plt.plot(pol_out[:,:,0])
+                plt.plot(prob[:,:,0])
                 plt.legend(['Fixate', 'match', 'Non-match'])
                 if trial_info['desired_output'][1,-1,0]==1:
                     plt.title('match'+'__'+str(reward.sum()))
@@ -307,3 +326,7 @@ def main(task, gpu_id):
                 plt.savefig(par['save_path']+'Iteration_'+str(it)+'.png')   # save the figure to file
                 plt.close()
                 print('%5d  |   Loss: %6.6f   |   Reward: %4d' % (it, loss, reward.sum()))
+
+        plt.plot(reward_overtime)
+        plt.savefig(par['save_path']+par['save_fn'])
+        plt.close()

@@ -1,0 +1,4 @@
+RDM_v1.py: The first version of the RDM task, archived on 3/28/2018. This version uses a for loop over trials and is slow and memory inefficient.
+
+RDM_v2.py: The second version of the RDM task, archived on 4/27/2018. This version has a lot of the original code, but learns only to fixate always. 
+Archived so I could delete unused pieces of code.

@@ -1,2 +1,2 @@
-# RL_RNN
-Reinforcement Learning with RNN
+# Short-term-plasticity-RNN
+Short-term plasticity RNN models in Tensorflow

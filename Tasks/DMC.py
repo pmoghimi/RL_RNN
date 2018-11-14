@@ -51,12 +51,18 @@ class dmc:
             self.pol_x_history.append(tf.transpose(pol_x))
             self.pol_r_history.append(tf.transpose(pol_r))
             self.pol_out_history.append(pol_out)
+
+
             """
             Choose action
             Given the output of the policy network, which specifies probabilities, choose an action
             """
             # The multinomial will generate a number in [0, 2] range, 0=fixation, 1=match, 2=nonmatch
-            this_action = tf.multinomial(tf.transpose(pol_out), 1) #tf.multinomial(tf.log(tf.transpose(pol_out)), 1)  # Do NOT remove the log!, or will produce samples not from the given distribution!
+            #this_action = tf.multinomial(tf.transpose(pol_out), 1) #tf.multinomial(tf.log(tf.transpose(pol_out)), 1)  # Do NOT remove the log!, or will produce samples not from the given distribution!
+            prob = tf.log(tf.nn.softmax(pol_out)) + 1e-10
+            pdb.set_trace()
+            this_action = tf.multinomial(tf.transpose(prob), 1)
+
             if t==0:
                 self.p = tf.transpose(pol_out)
                 self.test = tf.multinomial(self.p, 10000)

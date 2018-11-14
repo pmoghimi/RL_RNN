@@ -24,10 +24,10 @@ par = {
     'learning_rate'         : 2e-3,
     'membrane_time_constant': 100,
     'connection_prob'       : 1,      # Usually 1
-    'discount_time_constant': 500,    # Time constant for discount reward in ms (per Song et al., 2017)
-    'discount_coef'         : 0.1,    # Discount coefficient for the Schulman TD formula
+    #'discount_time_constant': 500,    # Time constant for discount reward in ms (per Song et al., 2017)
+    #'discount_coef'         : 0.5,    # Discount coefficient for the Schulman TD formula
     'entropy_cost'          : 0,        # Weight of entropy to encourage diversity in the output of the policy network
-    'learning_rule'         : 'diff',   # According to what rule the learning happens: 'Supervised', 'TD'=RL, TD, 'diff' = RL, difference between real and predicted
+    #'learning_rule'         : 'TD',   # According to what rule the learning happens: 'Supervised', 'TD'=RL, TD, 'diff' = RL, difference between real and predicted
 
     # Variance values
     'noise_in_sd'           : 0.1,
@@ -45,8 +45,8 @@ par = {
 
     # Training specs
     'batch_train_size'      : 1024,
-    'num_iterations'        : 10000,
-    'iters_between_outputs' : 10
+    'num_iterations'        : 2000,
+    'iters_between_outputs' : 100
 }
 
 """

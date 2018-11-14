@@ -19,6 +19,11 @@ tf.reset_default_graph()
 par['trial_type'] = 'DMC'
 A = dmc(par['batch_train_size'])
 task_list = ['DMC']
+par['learning_rule'] = 'TD'
+if par['learning_rule']=='TD':
+    taus = [0.7] #[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+if par['learning_rule']=='diff':
+    taus = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200, 1400, 1600, 1800, 2000]
 # model.main(A)
 
 #Check to see if a gpu id is provided, otherwise, assign a None value to it
@@ -29,21 +34,24 @@ elif len(sys.argv)==2:    # If a gpu id is provided
 
 for j in range(0,10):
     for task in task_list:
-        print('Training network on ', task,' task, network model number ', j)
-        # Path for saving results
-        par['save_path'] = task+'/'+str(j)+'/'
-        # Create a folder to save results if it does not already exist
-        if not os.path.exists(par['save_path']):
-            os.makedirs(par['save_path'])
-        #save_fn = task + '_' + str(j) + '.pkl'
-        save_fn = 'Results.pkl'
-        par['trial_type'] = task
-        par['save_fn'] = save_fn
-        #pdb.set_trace()
-        if not os.path.isfile(par['save_path'] + par['save_fn']):
-            model_debug.main(A, gpu_id)
-        else:
-            print('Network model number ', j ,' already exists, skipping...')
+        for tau in taus:
+            if par['learning_rule']=='TD':
+                par['discount_coef'] = tau
+            if par['learning_rule']=='diff':
+                par['discount_time_constant'] = tau
+            print('Training network on ', task,' task, network model number ', j)
+            # Path for saving results
+            par['save_path'] = task+'/'+str(j)+'/'
+            # Create a folder to save results if it does not already exist
+            if not os.path.exists(par['save_path']):
+                os.makedirs(par['save_path'])
+            save_fn = par['learning_rule'] + '_' + str(j) + '_' + str(tau) + '.png'
+            par['trial_type'] = task
+            par['save_fn'] = save_fn
+            if not os.path.isfile(par['save_path'] + par['save_fn']):
+                model_debug.main(A, gpu_id)
+            else:
+                print('Network model number ', j ,' already exists, skipping...')
 
 '''
 TO DO LIST:
